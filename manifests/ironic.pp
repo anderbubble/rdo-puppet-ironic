@@ -5,3 +5,5 @@ class { 'ironic::keystone::auth':
   admin_address    => '128.138.138.152',
   internal_address => '128.138.138.152',
 }
+
+class { 'ironic::db::mysql': password => 'ironic', }
