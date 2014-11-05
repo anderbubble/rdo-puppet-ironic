@@ -232,24 +232,24 @@ class ironic(
   # $ensure_package           = 'present',
   $database_connection      = false,
   $database_idle_timeout    = 3600,
-  # $rpc_backend              = 'ironic.openstack.common.rpc.impl_kombu',
+  $rpc_backend              = 'ironic.openstack.common.rpc.impl_kombu',
   # $image_service            = 'ironic.image.glance.GlanceImageService',
   # # these glance params should be optional
   # # this should probably just be configured as a glance client
   # $glance_api_servers       = 'localhost:9292',
   # $memcached_servers        = false,
-  # $rabbit_host              = 'localhost',
-  # $rabbit_hosts             = false,
-  # $rabbit_password          = 'guest',
-  # $rabbit_port              = '5672',
-  # $rabbit_userid            = 'guest',
-  # $rabbit_virtual_host      = '/',
-  # $rabbit_use_ssl           = false,
-  # $rabbit_ha_queues         = undef,
-  # $kombu_ssl_ca_certs       = undef,
-  # $kombu_ssl_certfile       = undef,
-  # $kombu_ssl_keyfile        = undef,
-  # $kombu_ssl_version        = 'SSLv3',
+  $rabbit_host              = 'localhost',
+  $rabbit_hosts             = false,
+  $rabbit_password          = 'guest',
+  $rabbit_port              = '5672',
+  $rabbit_userid            = 'guest',
+  $rabbit_virtual_host      = '/',
+  $rabbit_use_ssl           = false,
+  $rabbit_ha_queues         = undef,
+  $kombu_ssl_ca_certs       = undef,
+  $kombu_ssl_certfile       = undef,
+  $kombu_ssl_keyfile        = undef,
+  $kombu_ssl_version        = 'SSLv3',
   # $amqp_durable_queues      = false,
   # $qpid_hostname            = 'localhost',
   # $qpid_port                = '5672',
@@ -305,18 +305,18 @@ class ironic(
   #   }
   # }
 
-  # if $kombu_ssl_ca_certs and !$rabbit_use_ssl {
-  #   fail('The kombu_ssl_ca_certs parameter requires rabbit_use_ssl to be set to true')
-  # }
-  # if $kombu_ssl_certfile and !$rabbit_use_ssl {
-  #   fail('The kombu_ssl_certfile parameter requires rabbit_use_ssl to be set to true')
-  # }
-  # if $kombu_ssl_keyfile and !$rabbit_use_ssl {
-  #   fail('The kombu_ssl_keyfile parameter requires rabbit_use_ssl to be set to true')
-  # }
-  # if ($kombu_ssl_certfile and !$kombu_ssl_keyfile) or ($kombu_ssl_keyfile and !$kombu_ssl_certfile) {
-  #   fail('The kombu_ssl_certfile and kombu_ssl_keyfile parameters must be used together')
-  # }
+  if $kombu_ssl_ca_certs and !$rabbit_use_ssl {
+    fail('The kombu_ssl_ca_certs parameter requires rabbit_use_ssl to be set to true')
+  }
+  if $kombu_ssl_certfile and !$rabbit_use_ssl {
+    fail('The kombu_ssl_certfile parameter requires rabbit_use_ssl to be set to true')
+  }
+  if $kombu_ssl_keyfile and !$rabbit_use_ssl {
+    fail('The kombu_ssl_keyfile parameter requires rabbit_use_ssl to be set to true')
+  }
+  if ($kombu_ssl_certfile and !$kombu_ssl_keyfile) or ($kombu_ssl_keyfile and !$kombu_ssl_certfile) {
+    fail('The kombu_ssl_certfile and kombu_ssl_keyfile parameters must be used together')
+  }
 
   # if $ironic_public_key or $ironic_private_key {
   #   file { '/var/lib/ironic/.ssh':
@@ -449,68 +449,68 @@ class ironic(
   #   ironic_config { 'DEFAULT/memcached_servers': ensure => absent }
   # }
 
-  # if $rpc_backend == 'ironic.openstack.common.rpc.impl_kombu' {
-  #   # I may want to support exporting and collecting these
-  #   ironic_config {
-  #     'DEFAULT/rabbit_password':     value => $rabbit_password, secret => true;
-  #     'DEFAULT/rabbit_userid':       value => $rabbit_userid;
-  #     'DEFAULT/rabbit_virtual_host': value => $rabbit_virtual_host;
-  #     'DEFAULT/rabbit_use_ssl':      value => $rabbit_use_ssl;
-  #     'DEFAULT/amqp_durable_queues': value => $amqp_durable_queues;
-  #   }
+  if $rpc_backend == 'ironic.openstack.common.rpc.impl_kombu' {
+    # I may want to support exporting and collecting these
+    ironic_config {
+      'DEFAULT/rabbit_password':     value => $rabbit_password, secret => true;
+      'DEFAULT/rabbit_userid':       value => $rabbit_userid;
+      'DEFAULT/rabbit_virtual_host': value => $rabbit_virtual_host;
+      'DEFAULT/rabbit_use_ssl':      value => $rabbit_use_ssl;
+      'DEFAULT/amqp_durable_queues': value => $amqp_durable_queues;
+    }
 
-  #   if $rabbit_use_ssl {
+    if $rabbit_use_ssl {
 
-  #     if $kombu_ssl_ca_certs {
-  #       ironic_config { 'DEFAULT/kombu_ssl_ca_certs': value => $kombu_ssl_ca_certs; }
-  #     } else {
-  #       ironic_config { 'DEFAULT/kombu_ssl_ca_certs': ensure => absent; }
-  #     }
+      if $kombu_ssl_ca_certs {
+        ironic_config { 'DEFAULT/kombu_ssl_ca_certs': value => $kombu_ssl_ca_certs; }
+      } else {
+        ironic_config { 'DEFAULT/kombu_ssl_ca_certs': ensure => absent; }
+      }
 
-  #     if $kombu_ssl_certfile or $kombu_ssl_keyfile {
-  #       ironic_config {
-  #         'DEFAULT/kombu_ssl_certfile': value => $kombu_ssl_certfile;
-  #         'DEFAULT/kombu_ssl_keyfile':  value => $kombu_ssl_keyfile;
-  #       }
-  #     } else {
-  #       ironic_config {
-  #         'DEFAULT/kombu_ssl_certfile': ensure => absent;
-  #         'DEFAULT/kombu_ssl_keyfile':  ensure => absent;
-  #       }
-  #     }
+      if $kombu_ssl_certfile or $kombu_ssl_keyfile {
+        ironic_config {
+          'DEFAULT/kombu_ssl_certfile': value => $kombu_ssl_certfile;
+          'DEFAULT/kombu_ssl_keyfile':  value => $kombu_ssl_keyfile;
+        }
+      } else {
+        ironic_config {
+          'DEFAULT/kombu_ssl_certfile': ensure => absent;
+          'DEFAULT/kombu_ssl_keyfile':  ensure => absent;
+        }
+      }
 
-  #     if $kombu_ssl_version {
-  #       ironic_config { 'DEFAULT/kombu_ssl_version':  value => $kombu_ssl_version; }
-  #     } else {
-  #       ironic_config { 'DEFAULT/kombu_ssl_version':  ensure => absent; }
-  #     }
+      if $kombu_ssl_version {
+        ironic_config { 'DEFAULT/kombu_ssl_version':  value => $kombu_ssl_version; }
+      } else {
+        ironic_config { 'DEFAULT/kombu_ssl_version':  ensure => absent; }
+      }
 
-  #   } else {
-  #     ironic_config {
-  #       'DEFAULT/kombu_ssl_ca_certs': ensure => absent;
-  #       'DEFAULT/kombu_ssl_certfile': ensure => absent;
-  #       'DEFAULT/kombu_ssl_keyfile':  ensure => absent;
-  #       'DEFAULT/kombu_ssl_version':  ensure => absent;
-  #     }
-  #   }
+    } else {
+      ironic_config {
+        'DEFAULT/kombu_ssl_ca_certs': ensure => absent;
+        'DEFAULT/kombu_ssl_certfile': ensure => absent;
+        'DEFAULT/kombu_ssl_keyfile':  ensure => absent;
+        'DEFAULT/kombu_ssl_version':  ensure => absent;
+      }
+    }
 
-  #   if $rabbit_hosts {
-  #     ironic_config { 'DEFAULT/rabbit_hosts':     value => join($rabbit_hosts, ',') }
-  #   } else {
-  #     ironic_config { 'DEFAULT/rabbit_host':      value => $rabbit_host }
-  #     ironic_config { 'DEFAULT/rabbit_port':      value => $rabbit_port }
-  #     ironic_config { 'DEFAULT/rabbit_hosts':     value => "${rabbit_host}:${rabbit_port}" }
-  #   }
-  #   if $rabbit_ha_queues == undef {
-  #     if $rabbit_hosts {
-  #       ironic_config { 'DEFAULT/rabbit_ha_queues': value => true }
-  #     } else {
-  #       ironic_config { 'DEFAULT/rabbit_ha_queues': value => false }
-  #     }
-  #   } else {
-  #     ironic_config { 'DEFAULT/rabbit_ha_queues': value => $rabbit_ha_queues }
-  #   }
-  # }
+    if $rabbit_hosts {
+      ironic_config { 'DEFAULT/rabbit_hosts':     value => join($rabbit_hosts, ',') }
+    } else {
+      ironic_config { 'DEFAULT/rabbit_host':      value => $rabbit_host }
+      ironic_config { 'DEFAULT/rabbit_port':      value => $rabbit_port }
+      ironic_config { 'DEFAULT/rabbit_hosts':     value => "${rabbit_host}:${rabbit_port}" }
+    }
+    if $rabbit_ha_queues == undef {
+      if $rabbit_hosts {
+        ironic_config { 'DEFAULT/rabbit_ha_queues': value => true }
+      } else {
+        ironic_config { 'DEFAULT/rabbit_ha_queues': value => false }
+      }
+    } else {
+      ironic_config { 'DEFAULT/rabbit_ha_queues': value => $rabbit_ha_queues }
+    }
+  }
 
   # if $rpc_backend == 'ironic.openstack.common.rpc.impl_qpid' {
   #   ironic_config {
