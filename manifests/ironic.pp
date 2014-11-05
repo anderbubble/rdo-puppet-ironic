@@ -7,10 +7,14 @@ class { 'ironic::keystone::auth':
   internal_address => '128.138.138.152',
 }
 
-class { 'ironic::db::mysql': }
+class { 'ironic::db::mysql':
+  password => 'IRONIC_DBPASSWORD',
+}
 
 class { 'ironic::api': }
 class { 'ironic::conductor': }
-class { 'ironic': }
+class { 'ironic':
+  database_connection => 'mysql://ironic:IRONIC_DBPASSWORD@DB_IP/ironic?charset=utf8',
+}
 
 package { 'python-ironicclient': }

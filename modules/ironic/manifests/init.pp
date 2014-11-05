@@ -9,18 +9,6 @@
 #   (optional) The state of ironic packages
 #   Defaults to 'present'
 #
-# [*ironic_cluster_id*]
-#   (optional) Deprecated. This parameter does nothing and will be removed.
-#   Defaults to 'localcluster'
-#
-# [*sql_connection*]
-#   (optional) Deprecated. Use database_connection instead.
-#   Defaults to false
-#
-# [*sql_idle_timeout*]
-#   (optional) Deprecated. Use database_idle_timeout instead
-#   Defaults to false
-#
 # [*database_connection*]
 #   (optional) Connection url to connect to ironic database.
 #   Defaults to false
@@ -196,28 +184,6 @@
 #   (optional) CA certificate file to use to verify connecting clients
 #   Defaults to false, not set_
 #
-# [*ironic_user_id*]
-#   (optional) Create the ironic user with the specified gid.
-#   Changing to a new uid after specifying a different uid previously,
-#   or using this option after the ironic account already exists will break
-#   the ownership of all files/dirs owned by ironic. It is strongly encouraged
-#   not to use this option and instead create user before ironic class or
-#   for network shares create netgroup into which you'll put ironic on all the
-#   nodes. If undef no user will be created and user creation will standardly
-#   happen in ironic-common package.
-#   Defaults to undef.
-#
-# [*ironic_group_id*]
-#   (optional) Create the ironic user with the specified gid.
-#   Changing to a new uid after specifying a different uid previously,
-#   or using this option after the ironic account already exists will break
-#   the ownership of all files/dirs owned by ironic. It is strongly encouraged
-#   not to use this option and instead create group before ironic class or for
-#   network shares create netgroup into which you'll put ironic on all the
-#   nodes. If undef no user or group will be created and creation will
-#   happen in ironic-common package.
-#   Defaults to undef.
-#
 # [*ironic_public_key*]
 #   (optional) Install public key in .ssh/authorized_keys for the 'ironic' user.
 #   Expects a hash of the form { type => 'key-type', key => 'key-data' } where
@@ -233,9 +199,6 @@
 # [*ironic_shell*]
 #   (optional) Set shell for 'ironic' user to the specified value.
 #   Defaults to '/bin/false'.
-#
-# [*mysql_module*]
-#   (optional) Deprecated. Does nothing.
 #
 # [*notification_driver*]
 #   (optional) Driver or drivers to handle sending notifications.
@@ -267,8 +230,8 @@
 #   Defaults to undef
 class ironic(
   # $ensure_package           = 'present',
-  # $database_connection      = false,
-  # $database_idle_timeout    = 3600,
+  $database_connection      = false,
+  $database_idle_timeout    = 3600,
   # $rpc_backend              = 'ironic.openstack.common.rpc.impl_kombu',
   # $image_service            = 'ironic.image.glance.GlanceImageService',
   # # these glance params should be optional
@@ -311,8 +274,6 @@ class ironic(
   # $ca_file                  = false,
   # $cert_file                = false,
   # $key_file                 = false,
-  # $ironic_user_id             = undef,
-  # $ironic_group_id            = undef,
   # $ironic_public_key          = undef,
   # $ironic_private_key         = undef,
   # $ironic_shell               = '/bin/false',
@@ -325,23 +286,10 @@ class ironic(
   # $notification_topics      = 'notifications',
   # $notify_api_faults        = false,
   # $notify_on_state_change   = undef,
-  # # DEPRECATED PARAMETERS
-  # $mysql_module             = undef,
   # # this is how to query all resources from our clutser
-  # $ironic_cluster_id          = undef,
-  # $sql_connection           = false,
-  # $sql_idle_timeout         = false,
   # $logdir                   = false,
   # $os_region_name           = undef,
 ) inherits ironic::params {
-
-  # if $mysql_module {
-  #   warning('The mysql_module parameter is deprecated. The latest 2.x mysql module will be used.')
-  # }
-
-  # if $ironic_cluster_id {
-  #   warning('The ironic_cluster_id parameter is deprecated and has no effect.')
-  # }
 
   # validate_array($enabled_ssl_apis)
   # if empty($enabled_ssl_apis) and $use_ssl {
@@ -368,31 +316,6 @@ class ironic(
   # }
   # if ($kombu_ssl_certfile and !$kombu_ssl_keyfile) or ($kombu_ssl_keyfile and !$kombu_ssl_certfile) {
   #   fail('The kombu_ssl_certfile and kombu_ssl_keyfile parameters must be used together')
-  # }
-
-  # if $ironic_group_id {
-  #   warning('The ironic_group_id will be deprecated, please create group manually')
-  #   group { 'ironic':
-  #     ensure  => present,
-  #     system  => true,
-  #     gid     => $ironic_group_id,
-  #     before  => Package['ironic-common'],
-  #   }
-  # }
-  # if $ironic_user_id {
-  #   warning('The ironic_user_id will be deprecated, please create user manually')
-  #   user { 'ironic':
-  #     ensure     => present,
-  #     system     => true,
-  #     groups     => 'ironic',
-  #     home       => '/var/lib/ironic',
-  #     managehome => false,
-  #     shell      => $ironic_shell,
-  #     uid        => $ironic_user_id,
-  #     gid        => $ironic_group_id,
-  #     before     => Package['ironic-common'],
-  #     require    => Group['ironic'],
-  #   }
   # }
 
   # if $ironic_public_key or $ironic_private_key {
@@ -491,38 +414,24 @@ class ironic(
   #   refreshonly => true,
   # }
 
-  # if $sql_connection {
-  #   warning('The sql_connection parameter is deprecated, use database_connection instead.')
-  #   $database_connection_real = $sql_connection
-  # } else {
-  #   $database_connection_real = $database_connection
-  # }
+  # both the database_connection and rabbit_host are things
+  # that may need to be collected from a remote host
+  if $database_connection {
+    if($database_connection =~ /mysql:\/\/\S+:\S+@\S+\/\S+/) {
+      require 'mysql::bindings'
+      require 'mysql::bindings::python'
+  } elsif($database_connection =~ /postgresql:\/\/\S+:\S+@\S+\/\S+/) {
 
-  # if $sql_idle_timeout {
-  #   warning('The sql_idle_timeout parameter is deprecated, use database_idle_timeout instead.')
-  #   $database_idle_timeout_real = $sql_idle_timeout
-  # } else {
-  #   $database_idle_timeout_real = $database_idle_timeout
-  # }
+    } elsif($database_connection =~ /sqlite:\/\//) {
 
-  # # both the database_connection and rabbit_host are things
-  # # that may need to be collected from a remote host
-  # if $database_connection_real {
-  #   if($database_connection_real =~ /mysql:\/\/\S+:\S+@\S+\/\S+/) {
-  #     require 'mysql::bindings'
-  #     require 'mysql::bindings::python'
-  #   } elsif($database_connection_real =~ /postgresql:\/\/\S+:\S+@\S+\/\S+/) {
-
-  #   } elsif($database_connection_real =~ /sqlite:\/\//) {
-
-  #   } else {
-  #     fail("Invalid db connection ${database_connection_real}")
-  #   }
-  #   ironic_config {
-  #     'database/connection':   value => $database_connection_real, secret => true;
-  #     'database/idle_timeout': value => $database_idle_timeout_real;
-  #   }
-  # }
+    } else {
+      fail("Invalid db connection ${database_connection}")
+    }
+    ironic_config {
+      'database/connection':   value => $database_connection, secret => true;
+      'database/idle_timeout': value => $database_idle_timeout;
+    }
+  }
 
   # ironic_config { 'DEFAULT/image_service': value => $image_service }
 
