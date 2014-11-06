@@ -15,10 +15,13 @@ class { 'ironic::db::mysql':
 }
 
 class { 'ironic::api':
+  enabled        => true,
   auth_host      => '128.138.138.152',
   admin_password => 'ironic',
 }
-class { 'ironic::conductor': }
+class { 'ironic::conductor':
+  enabled => true,
+}
 class { 'ironic':
   database_connection => 'mysql://ironic:ironic@128.138.138.152/ironic?charset=utf8',
   rabbit_host         => '128.138.138.152'
