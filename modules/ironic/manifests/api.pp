@@ -255,10 +255,12 @@ class ironic::api(
   if $sync_db {
     Package<| title == 'ironic-api' |> -> Exec['ironic-db-sync']
     exec { 'ironic-db-sync':
-      command     => '/usr/bin/ironic-manage db sync',
+      command     => '/usr/bin/ironic-dbsync --config-file /etc/ironic/ironic.conf upgrade',
+      require     => Package['python-pbr'],
       refreshonly => true,
       subscribe   => Exec['post-ironic_config'],
     }
+    package { 'python-pbr': ensure => latest, }
   }
 
   # Remove auth configuration from api-paste.ini

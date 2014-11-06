@@ -8,7 +8,10 @@ class { 'ironic::keystone::auth':
 }
 
 class { 'ironic::db::mysql':
-  password => 'ironic',
+  password      => 'ironic',
+  host          => '%',
+  allowed_hosts => '%',
+  charset       => 'utf8',
 }
 
 class { 'ironic::api':
