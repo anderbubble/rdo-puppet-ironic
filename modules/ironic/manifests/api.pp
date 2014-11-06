@@ -108,18 +108,18 @@
 #   Defaults to false
 #
 class ironic::api(
-  # $admin_password,
+  $admin_password,
   $enabled               = false,
   $manage_service        = true,
   $ensure_package        = 'present',
-  # $auth_host             = '127.0.0.1',
-  # $auth_port             = 35357,
-  # $auth_protocol         = 'http',
-  # $auth_uri              = false,
-  # $auth_admin_prefix     = false,
-  # $auth_version          = false,
-  # $admin_tenant_name     = 'services',
-  # $admin_user            = 'ironic',
+  $auth_host             = '127.0.0.1',
+  $auth_port             = 35357,
+  $auth_protocol         = 'http',
+  $auth_uri              = false,
+  $auth_admin_prefix     = false,
+  $auth_version          = false,
+  $admin_tenant_name     = 'services',
+  $admin_user            = 'ironic',
   # $api_bind_address      = '0.0.0.0',
   # $metadata_listen       = '0.0.0.0',
   # $enabled_apis          = 'ec2,osapi_compute,metadata',
@@ -128,7 +128,7 @@ class ironic::api(
   # $osapi_compute_workers = $::processorcount,
   # $ec2_workers           = $::processorcount,
   # $metadata_workers      = $::processorcount,
-  # $sync_db               = true,
+  $sync_db               = true,
   # $neutron_metadata_proxy_shared_secret = undef,
   # $osapi_v3              = false,
   # $ratelimits            = undef,
@@ -137,15 +137,15 @@ class ironic::api(
 ) {
 
   include ironic::params
-  # require keystone::python
+  require keystone::python
 
-  # Package<| title == 'ironic-api' |> -> Ironic_paste_api_ini<| |>
+  Package<| title == 'ironic-api' |> -> Ironic_paste_api_ini<| |>
 
-  # Package<| title == 'ironic-common' |> -> Class['ironic::api']
+  Package<| title == 'ironic-common' |> -> Class['ironic::api']
 
   Ironic_paste_api_ini<| |> ~> Exec['post-ironic_config']
 
-  # Ironic_paste_api_ini<| |> ~> Service['ironic-api']
+  Ironic_paste_api_ini<| |> ~> Service['ironic-api']
 
   ironic::generic_service { 'api':
     enabled        => $enabled,
@@ -181,37 +181,37 @@ class ironic::api(
   #   }
   # }
 
-  # if $auth_uri {
-  #   ironic_config { 'keystone_authtoken/auth_uri': value => $auth_uri; }
-  # } else {
-  #   ironic_config { 'keystone_authtoken/auth_uri': value => "${auth_protocol}://${auth_host}:5000/"; }
-  # }
+  if $auth_uri {
+    ironic_config { 'keystone_authtoken/auth_uri': value => $auth_uri; }
+  } else {
+    ironic_config { 'keystone_authtoken/auth_uri': value => "${auth_protocol}://${auth_host}:5000/"; }
+  }
 
-  # if $auth_version {
-  #   ironic_config { 'keystone_authtoken/auth_version': value => $auth_version; }
-  # } else {
-  #   ironic_config { 'keystone_authtoken/auth_version': ensure => absent; }
-  # }
+  if $auth_version {
+    ironic_config { 'keystone_authtoken/auth_version': value => $auth_version; }
+  } else {
+    ironic_config { 'keystone_authtoken/auth_version': ensure => absent; }
+  }
 
-  # ironic_config {
-  #   'keystone_authtoken/auth_host':         value => $auth_host;
-  #   'keystone_authtoken/auth_port':         value => $auth_port;
-  #   'keystone_authtoken/auth_protocol':     value => $auth_protocol;
-  #   'keystone_authtoken/admin_tenant_name': value => $admin_tenant_name;
-  #   'keystone_authtoken/admin_user':        value => $admin_user;
-  #   'keystone_authtoken/admin_password':    value => $admin_password, secret => true;
-  # }
+  ironic_config {
+    'keystone_authtoken/auth_host':         value => $auth_host;
+    'keystone_authtoken/auth_port':         value => $auth_port;
+    'keystone_authtoken/auth_protocol':     value => $auth_protocol;
+    'keystone_authtoken/admin_tenant_name': value => $admin_tenant_name;
+    'keystone_authtoken/admin_user':        value => $admin_user;
+    'keystone_authtoken/admin_password':    value => $admin_password, secret => true;
+  }
 
-  # if $auth_admin_prefix {
-  #   validate_re($auth_admin_prefix, '^(/.+[^/])?$')
-  #   ironic_config {
-  #     'keystone_authtoken/auth_admin_prefix': value => $auth_admin_prefix;
-  #   }
-  # } else {
-  #   ironic_config {
-  #     'keystone_authtoken/auth_admin_prefix': ensure => absent;
-  #   }
-  # }
+  if $auth_admin_prefix {
+    validate_re($auth_admin_prefix, '^(/.+[^/])?$')
+    ironic_config {
+      'keystone_authtoken/auth_admin_prefix': value => $auth_admin_prefix;
+    }
+  } else {
+    ironic_config {
+      'keystone_authtoken/auth_admin_prefix': ensure => absent;
+    }
+  }
 
   # if $keystone_ec2_url {
   #   ironic_config {
@@ -250,27 +250,27 @@ class ironic::api(
   #   }
   # }
 
-  # # Added arg and if statement prevents this from being run
-  # # where db is not active i.e. the compute
-  # if $sync_db {
-  #   Package<| title == 'ironic-api' |> -> Exec['ironic-db-sync']
-  #   exec { 'ironic-db-sync':
-  #     command     => '/usr/bin/ironic-manage db sync',
-  #     refreshonly => true,
-  #     subscribe   => Exec['post-ironic_config'],
-  #   }
-  # }
+  # Added arg and if statement prevents this from being run
+  # where db is not active i.e. the compute
+  if $sync_db {
+    Package<| title == 'ironic-api' |> -> Exec['ironic-db-sync']
+    exec { 'ironic-db-sync':
+      command     => '/usr/bin/ironic-manage db sync',
+      refreshonly => true,
+      subscribe   => Exec['post-ironic_config'],
+    }
+  }
 
-  # # Remove auth configuration from api-paste.ini
-  # ironic_paste_api_ini {
-  #   'filter:authtoken/auth_uri':          ensure => absent;
-  #   'filter:authtoken/auth_host':         ensure => absent;
-  #   'filter:authtoken/auth_port':         ensure => absent;
-  #   'filter:authtoken/auth_protocol':     ensure => absent;
-  #   'filter:authtoken/admin_tenant_name': ensure => absent;
-  #   'filter:authtoken/admin_user':        ensure => absent;
-  #   'filter:authtoken/admin_password':    ensure => absent;
-  #   'filter:authtoken/auth_admin_prefix': ensure => absent;
-  # }
+  # Remove auth configuration from api-paste.ini
+  ironic_paste_api_ini {
+    'filter:authtoken/auth_uri':          ensure => absent;
+    'filter:authtoken/auth_host':         ensure => absent;
+    'filter:authtoken/auth_port':         ensure => absent;
+    'filter:authtoken/auth_protocol':     ensure => absent;
+    'filter:authtoken/admin_tenant_name': ensure => absent;
+    'filter:authtoken/admin_user':        ensure => absent;
+    'filter:authtoken/admin_password':    ensure => absent;
+    'filter:authtoken/auth_admin_prefix': ensure => absent;
+  }
 
 }

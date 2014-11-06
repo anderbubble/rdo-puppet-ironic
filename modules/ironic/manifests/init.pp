@@ -259,7 +259,7 @@ class ironic(
   # $qpid_heartbeat           = 60,
   # $qpid_protocol            = 'tcp',
   # $qpid_tcp_nodelay         = true,
-  # $auth_strategy            = 'keystone',
+  $auth_strategy            = 'keystone',
   # $service_down_time        = 60,
   # $log_dir                  = '/var/log/ironic',
   # $state_path               = '/var/lib/ironic',
@@ -441,7 +441,7 @@ class ironic(
   #   }
   # }
 
-  # ironic_config { 'DEFAULT/auth_strategy': value => $auth_strategy }
+  ironic_config { 'DEFAULT/auth_strategy': value => $auth_strategy }
 
   # if $memcached_servers {
   #   ironic_config { 'DEFAULT/memcached_servers': value  => join($memcached_servers, ',') }
